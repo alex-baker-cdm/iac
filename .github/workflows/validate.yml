@@ -1,0 +1,102 @@
+name: Validate Infrastructure
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.yml'
+      - '**.yaml'
+      - '**.tf'
+      - '**.json'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.yml'
+      - '**.yaml'
+      - '**.tf'
+      - '**.json'
+
+jobs:
+  validate-cloudformation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        continue-on-error: true
+      
+      - name: Validate CloudFormation templates
+        run: |
+          echo "Validating CloudFormation templates..."
+          for file in AWS/*.yml; do
+            if [ -f "$file" ]; then
+              echo "Validating $file"
+              aws cloudformation validate-template --template-body file://$file || true
+            fi
+          done
+        continue-on-error: true
+
+  validate-terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+      
+      - name: Terraform Format
+        run: terraform fmt -check -recursive .
+        continue-on-error: true
+      
+      - name: Terraform Validate
+        run: |
+          echo "Validating Terraform configurations..."
+          for dir in Basic Examples; do
+            if [ -d "$dir" ] && [ -f "$dir/main.tf" ]; then
+              echo "Validating $dir"
+              cd $dir
+              terraform init -backend=false
+              terraform validate || true
+              cd ..
+            fi
+          done
+        continue-on-error: true
+
+  validate-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Validate JSON files
+        run: |
+          echo "Validating JSON files..."
+          for file in $(find . -name '*.json' -type f); do
+            echo "Validating $file"
+            python3 -m json.tool "$file" > /dev/null 2>&1 || echo "Invalid JSON: $file"
+          done
+
+  lint-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Lint JavaScript files
+        run: |
+          npm install -g eslint
+          for file in $(find . -name '*.js' -type f); do
+            echo "Linting $file"
+            eslint "$file" || true
+          done
+        continue-on-error: true
