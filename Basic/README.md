@@ -75,7 +75,7 @@ node server.js
 
 - **Azure Examples**: Azure CLI or PowerShell, Active Azure subscription
 - **Terraform**: Terraform installed, Cloud provider credentials configured
-- **Node.js**: Node.js 14+, npm installed
+- **Node.js**: Node.js 22+ (LTS), npm installed
 
 ## Key Concepts
 

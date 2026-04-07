@@ -80,7 +80,7 @@ Before using the examples in this repository, ensure you have the following inst
 - `.tfvars` file with your configuration variables
 
 ### JavaScript Examples
-- Node.js (version 14.x or later)
+- Node.js (version 22.x LTS or later)
 - npm or yarn package manager
 - Required: `axios` package (`npm install axios`)
 
